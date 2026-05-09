@@ -1,0 +1,450 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Sagi — Tu Asistente Personal</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@500;700&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+* { margin:0; padding:0; box-sizing:border-box; }
+body { font-family:'DM Sans',sans-serif; background:linear-gradient(135deg,#FFF0E8,#EBF3FF); min-height:100vh; display:flex; flex-direction:column; align-items:center; }
+
+header { width:100%; background:white; padding:14px 20px; display:flex; align-items:center; justify-content:space-between; box-shadow:0 2px 8px rgba(0,0,0,0.08); position:sticky; top:0; z-index:100; }
+.logo { display:flex; align-items:center; gap:12px; }
+.logo-icon { width:42px; height:42px; background:linear-gradient(135deg,#FF6B35,#1A3A6E); border-radius:12px; display:flex; align-items:center; justify-content:center; font-size:20px; }
+.logo h1 { font-family:'Playfair Display',serif; font-size:22px; background:linear-gradient(135deg,#FF6B35,#1A3A6E); -webkit-background-clip:text; -webkit-text-fill-color:transparent; }
+.logo p { font-size:11px; color:#9CA3AF; }
+
+.tabs { width:100%; max-width:860px; display:flex; gap:4px; padding:16px 16px 0; }
+.tab { flex:1; padding:10px 6px; border:none; background:white; border-radius:10px 10px 0 0; cursor:pointer; font-size:13px; font-weight:500; color:#9CA3AF; transition:all .2s; }
+.tab.active { background:linear-gradient(135deg,#FF6B35,#1A3A6E); color:white; font-weight:600; }
+
+.app { width:100%; max-width:860px; background:white; border-radius:0 0 16px 16px; box-shadow:0 16px 48px rgba(26,58,110,0.18); margin:0 16px; min-height:calc(100vh - 130px); display:flex; flex-direction:column; overflow:hidden; }
+
+.panel { display:none; flex-direction:column; flex:1; }
+.panel.active { display:flex; }
+
+/* CHAT */
+.chat-area { flex:1; overflow-y:auto; padding:20px; display:flex; flex-direction:column; gap:14px; }
+.welcome { background:linear-gradient(135deg,#FF6B35,#5B9BD5,#1A3A6E); border-radius:16px; padding:22px; color:white; }
+.welcome h2 { font-family:'Playfair Display',serif; font-size:20px; margin-bottom:6px; }
+.welcome p { font-size:13px; opacity:.9; }
+.chips { display:flex; flex-wrap:wrap; gap:8px; margin-top:14px; }
+.chip { background:rgba(255,255,255,0.2); border:1px solid rgba(255,255,255,0.4); color:white; border-radius:20px; padding:6px 14px; font-size:12px; cursor:pointer; transition:all .2s; }
+.chip:hover { background:rgba(255,255,255,0.35); }
+
+.msg { display:flex; gap:10px; animation:fadeUp .3s ease; }
+.msg.user { flex-direction:row-reverse; }
+@keyframes fadeUp { from{opacity:0;transform:translateY(10px)} to{opacity:1;transform:translateY(0)} }
+.avatar { width:34px; height:34px; border-radius:10px; display:flex; align-items:center; justify-content:center; font-size:16px; flex-shrink:0; align-self:flex-end; }
+.msg.ai .avatar { background:linear-gradient(135deg,#FF6B35,#1A3A6E); }
+.msg.user .avatar { background:#EBF3FF; }
+.bubble { max-width:75%; padding:12px 16px; border-radius:16px; font-size:14px; line-height:1.55; color:#1F2937; }
+.msg.ai .bubble { background:#F9FAFB; border:1px solid #E5E7EB; border-bottom-left-radius:4px; }
+.msg.user .bubble { background:linear-gradient(135deg,#FF6B35,#1A3A6E); color:white; border-bottom-right-radius:4px; }
+.msg-time { font-size:10px; color:#9CA3AF; margin-top:4px; }
+.msg.user .msg-time { text-align:right; }
+
+.dots { display:flex; gap:4px; align-items:center; }
+.dots span { width:7px; height:7px; background:#FF9F6B; border-radius:50%; animation:bounce 1.2s infinite; }
+.dots span:nth-child(2){animation-delay:.2s} .dots span:nth-child(3){animation-delay:.4s}
+@keyframes bounce{0%,60%,100%{transform:translateY(0)}30%{transform:translateY(-6px)}}
+
+.input-area { padding:14px 20px; border-top:1px solid #E5E7EB; }
+.input-row { display:flex; gap:10px; align-items:flex-end; }
+.btn-new { padding:8px 14px; border:1.5px solid #E5E7EB; border-radius:10px; background:white; cursor:pointer; font-size:12px; color:#4B5563; white-space:nowrap; }
+textarea { flex:1; border:1.5px solid #E5E7EB; border-radius:14px; padding:12px 16px; font-family:'DM Sans',sans-serif; font-size:14px; resize:none; min-height:46px; max-height:120px; outline:none; }
+textarea:focus { border-color:#FF9F6B; }
+.btn-send { width:46px; height:46px; background:linear-gradient(135deg,#FF6B35,#1A3A6E); border:none; border-radius:14px; cursor:pointer; font-size:20px; color:white; flex-shrink:0; }
+
+/* REMINDERS */
+.panel-hdr { padding:20px; border-bottom:1px solid #E5E7EB; display:flex; align-items:center; justify-content:space-between; }
+.panel-hdr h2 { font-family:'Playfair Display',serif; font-size:18px; color:#1A3A6E; }
+.panel-hdr p { font-size:12px; color:#9CA3AF; }
+.btn-add { background:linear-gradient(135deg,#FF6B35,#1A3A6E); color:white; border:none; border-radius:10px; padding:9px 16px; font-size:13px; font-weight:600; cursor:pointer; }
+.rem-list { flex:1; overflow-y:auto; padding:16px 20px; display:flex; flex-direction:column; gap:10px; }
+.rem-card { background:white; border:1.5px solid #E5E7EB; border-radius:10px; padding:14px 16px; display:flex; align-items:flex-start; gap:12px; }
+.dot { width:10px; height:10px; border-radius:50%; flex-shrink:0; margin-top:5px; }
+.dot.alta{background:#EF4444} .dot.media{background:#FF6B35} .dot.baja{background:#5B9BD5}
+.rem-title { font-size:14px; font-weight:600; color:#1F2937; }
+.rem-meta { display:flex; gap:6px; margin-top:4px; flex-wrap:wrap; }
+.tag { font-size:11px; padding:2px 8px; border-radius:10px; font-weight:500; }
+.tag-sena{background:#DCFCE7;color:#16A34A} .tag-transito{background:#DBEAFE;color:#1D4ED8} .tag-hijos{background:#FCE7F3;color:#BE185D} .tag-personal{background:#FFF0E8;color:#FF6B35} .tag-pagos{background:#FEF9C3;color:#A16207}
+.rem-actions { display:flex; gap:6px; margin-left:auto; }
+.btn-sm { width:28px; height:28px; border:1.5px solid #E5E7EB; border-radius:8px; background:white; cursor:pointer; font-size:13px; }
+.done-card { opacity:.5; }
+.done-card .rem-title { text-decoration:line-through; }
+
+/* QUICK */
+.quick-grid { padding:20px; display:grid; grid-template-columns:repeat(2,1fr); gap:12px; }
+.q-card { background:white; border:1.5px solid #E5E7EB; border-radius:16px; padding:20px 16px; cursor:pointer; transition:all .25s; display:flex; flex-direction:column; gap:10px; }
+.q-card:hover { box-shadow:0 6px 24px rgba(26,58,110,0.12); transform:translateY(-2px); border-color:#FF9F6B; }
+.q-icon { width:44px; height:44px; border-radius:12px; display:flex; align-items:center; justify-content:center; font-size:22px; }
+.q-label { font-size:14px; font-weight:600; color:#1F2937; }
+.q-desc { font-size:11px; color:#9CA3AF; margin-top:2px; }
+
+/* PAYMENTS */
+.pay-wrap { flex:1; overflow-y:auto; padding:20px; }
+.pay-summary { display:grid; grid-template-columns:repeat(3,1fr); gap:10px; margin-bottom:20px; }
+.sum-card { border-radius:10px; padding:14px; text-align:center; }
+.sum-card.total{background:linear-gradient(135deg,#FF6B35,#FF9F6B);color:white}
+.sum-card.paid{background:#DCFCE7;color:#16A34A}
+.sum-card.pend{background:#FEE2E2;color:#EF4444}
+.sum-amount { font-family:'Playfair Display',serif; font-size:18px; font-weight:700; }
+.sum-label { font-size:11px; margin-top:2px; opacity:.8; }
+.pay-list { display:flex; flex-direction:column; gap:10px; }
+.pay-item { background:white; border:1.5px solid #E5E7EB; border-radius:10px; padding:14px 16px; display:flex; align-items:center; gap:12px; }
+.pay-icon { width:40px; height:40px; border-radius:10px; background:#FFF0E8; display:flex; align-items:center; justify-content:center; font-size:20px; flex-shrink:0; }
+.pay-name { font-size:14px; font-weight:600; color:#1F2937; }
+.pay-due { font-size:11px; color:#9CA3AF; margin-top:2px; }
+.pay-amount { font-family:'Playfair Display',serif; font-size:16px; font-weight:700; color:#1A3A6E; }
+.status { font-size:11px; font-weight:600; padding:3px 10px; border-radius:20px; cursor:pointer; margin-top:4px; display:inline-block; }
+.s-pendiente{background:#FEE2E2;color:#EF4444}
+.s-pagado{background:#DCFCE7;color:#16A34A}
+.s-proximo{background:#FEF9C3;color:#A16207}
+
+/* MODAL */
+.overlay { position:fixed; inset:0; background:rgba(26,58,110,0.4); z-index:200; display:none; align-items:center; justify-content:center; padding:20px; }
+.overlay.open { display:flex; }
+.modal { background:white; border-radius:16px; padding:24px; width:100%; max-width:420px; box-shadow:0 16px 48px rgba(0,0,0,0.2); }
+.modal h3 { font-family:'Playfair Display',serif; font-size:18px; color:#1A3A6E; margin-bottom:16px; }
+.form-group { margin-bottom:14px; }
+.form-group label { display:block; font-size:12px; font-weight:600; color:#4B5563; margin-bottom:5px; text-transform:uppercase; }
+.form-group input, .form-group select { width:100%; border:1.5px solid #E5E7EB; border-radius:10px; padding:10px 14px; font-family:'DM Sans',sans-serif; font-size:14px; outline:none; }
+.form-group input:focus, .form-group select:focus { border-color:#FF9F6B; }
+.modal-actions { display:flex; gap:10px; margin-top:20px; }
+.btn-cancel { flex:1; padding:11px; border:1.5px solid #E5E7EB; border-radius:10px; background:white; cursor:pointer; font-size:14px; color:#4B5563; }
+.btn-ok { flex:1; padding:11px; border:none; border-radius:10px; background:linear-gradient(135deg,#FF6B35,#1A3A6E); color:white; cursor:pointer; font-size:14px; font-weight:600; }
+
+.empty { text-align:center; padding:40px 20px; color:#9CA3AF; }
+.empty .ei { font-size:48px; margin-bottom:12px; }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo">
+    <div class="logo-icon">🤖</div>
+    <div>
+      <h1>Sagi</h1>
+      <p>Tu asistente personal inteligente</p>
+    </div>
+  </div>
+  <span id="dateLabel" style="font-size:12px;color:#9CA3AF;background:#F3F4F6;padding:5px 10px;border-radius:20px;"></span>
+</header>
+
+<div class="tabs">
+  <button class="tab active" onclick="switchTab('chat',this)">💬 Chat</button>
+  <button class="tab" onclick="switchTab('rem',this)">⏰ Recordatorios <span id="remBadge" style="background:#FF6B35;color:white;border-radius:10px;padding:1px 6px;font-size:10px;font-weight:700;"></span></button>
+  <button class="tab" onclick="switchTab('quick',this)">⚡ Acciones</button>
+  <button class="tab" onclick="switchTab('pay',this)">💳 Pagos <span id="payBadge" style="background:#FF6B35;color:white;border-radius:10px;padding:1px 6px;font-size:10px;font-weight:700;"></span></button>
+</div>
+
+<div class="app">
+
+  <!-- CHAT -->
+  <div class="panel active" id="panel-chat">
+    <div class="chat-area" id="chatArea">
+      <div class="welcome">
+        <h2>¡Hola! Soy Sagi 👋</h2>
+        <p>Tu asistente personal para el SENA, Tránsito, tu familia y todo lo que necesites.</p>
+        <div class="chips">
+          <div class="chip" onclick="send('Organiza mi semana en el SENA y Tránsito')">📅 Organizar semana</div>
+          <div class="chip" onclick="send('Ayúdame a redactar un correo formal')">✉️ Redactar correo</div>
+          <div class="chip" onclick="send('Explícame una fórmula de Excel')">📊 Excel</div>
+          <div class="chip" onclick="send('Necesito ayuda con las tareas de mis hijos')">👨‍👩‍👧 Tareas hijos</div>
+          <div class="chip" onclick="send('Ayúdame a organizar mis deudas y gastos')">💰 Finanzas</div>
+        </div>
+      </div>
+    </div>
+    <div class="input-area">
+      <div class="input-row">
+        <button class="btn-new" onclick="resetChat()">🔄 Nueva</button>
+        <textarea id="chatInput" placeholder="Escríbele a Sagi..." rows="1" onkeydown="onKey(event)" oninput="resize(this)"></textarea>
+        <button class="btn-send" onclick="sendMsg()">📤</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- REMINDERS -->
+  <div class="panel" id="panel-rem">
+    <div class="panel-hdr">
+      <div><h2>⏰ Recordatorios</h2><p>Se crean desde el chat o manualmente</p></div>
+      <button class="btn-add" onclick="openRem()">+ Agregar</button>
+    </div>
+    <div class="rem-list" id="remList"></div>
+  </div>
+
+  <!-- QUICK -->
+  <div class="panel" id="panel-quick">
+    <div class="panel-hdr"><div><h2>⚡ Acciones Rápidas</h2><p>Atajos para tus tareas frecuentes</p></div></div>
+    <div class="quick-grid">
+      <div class="q-card" onclick="goChat('Ayúdame a redactar un correo profesional formal')">
+        <div class="q-icon" style="background:#FFF0E8">✉️</div>
+        <div><div class="q-label">Redactar Correo</div><div class="q-desc">Correos para SENA, Tránsito u otros</div></div>
+      </div>
+      <div class="q-card" onclick="goChat('Ayúdame con Excel: fórmulas, tablas dinámicas o macros')">
+        <div class="q-icon" style="background:#EBF3FF">📊</div>
+        <div><div class="q-label">Ayuda con Excel</div><div class="q-desc">Fórmulas, tablas, macros y más</div></div>
+      </div>
+      <div class="q-card" onclick="goChat('Organiza mi agenda semanal para el SENA y Tránsito, siendo mamá')">
+        <div class="q-icon" style="background:#DCFCE7">🗓️</div>
+        <div><div class="q-label">Organizar Agenda</div><div class="q-desc">SENA, Tránsito y familia</div></div>
+      </div>
+      <div class="q-card" onclick="goChat('Necesito ayuda con las tareas o deberes de mis hijos')">
+        <div class="q-icon" style="background:#FCE7F3">👨‍👩‍👧</div>
+        <div><div class="q-label">Tareas Hijos</div><div class="q-desc">Apoyo académico y organización</div></div>
+      </div>
+      <div class="q-card" onclick="goChat('Ayúdame a organizar mis finanzas, deudas y presupuesto mensual')">
+        <div class="q-icon" style="background:#FEF9C3">💰</div>
+        <div><div class="q-label">Finanzas</div><div class="q-desc">Organizar deudas y presupuesto</div></div>
+      </div>
+      <div class="q-card" onclick="switchTab('pay',document.querySelectorAll('.tab')[3])">
+        <div class="q-icon" style="background:#F3E8FF">💳</div>
+        <div><div class="q-label">Cuentas por Pagar</div><div class="q-desc">Ver y gestionar pagos pendientes</div></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- PAYMENTS -->
+  <div class="panel" id="panel-pay">
+    <div class="panel-hdr">
+      <div><h2>💳 Cuentas por Pagar</h2><p>Toca el estado para cambiar</p></div>
+      <button class="btn-add" onclick="openPay()">+ Agregar</button>
+    </div>
+    <div class="pay-wrap">
+      <div class="pay-summary">
+        <div class="sum-card total"><div class="sum-amount" id="sumTotal">$0</div><div class="sum-label">Total</div></div>
+        <div class="sum-card paid"><div class="sum-amount" id="sumPaid">$0</div><div class="sum-label">Pagado</div></div>
+        <div class="sum-card pend"><div class="sum-amount" id="sumPend">$0</div><div class="sum-label">Pendiente</div></div>
+      </div>
+      <div class="pay-list" id="payList"></div>
+    </div>
+  </div>
+
+</div>
+
+<!-- REM MODAL -->
+<div class="overlay" id="remModal">
+  <div class="modal">
+    <h3>➕ Nuevo Recordatorio</h3>
+    <div class="form-group"><label>Descripción</label><input type="text" id="remTitle" placeholder="Ej: Entrega informe SENA"></div>
+    <div class="form-group"><label>Fecha y hora</label><input type="datetime-local" id="remDt"></div>
+    <div class="form-group"><label>Prioridad</label>
+      <select id="remPri"><option value="alta">🔴 Alta</option><option value="media" selected>🟠 Media</option><option value="baja">🔵 Baja</option></select>
+    </div>
+    <div class="form-group"><label>Categoría</label>
+      <select id="remCat"><option value="personal">👤 Personal</option><option value="sena">🎓 SENA</option><option value="transito">🚦 Tránsito</option><option value="hijos">👨‍👩‍👧 Hijos</option><option value="pagos">💳 Pagos</option></select>
+    </div>
+    <div class="modal-actions">
+      <button class="btn-cancel" onclick="closeM('remModal')">Cancelar</button>
+      <button class="btn-ok" onclick="saveRem()">Guardar</button>
+    </div>
+  </div>
+</div>
+
+<!-- PAY MODAL -->
+<div class="overlay" id="payModal">
+  <div class="modal">
+    <h3>💳 Nueva Cuenta</h3>
+    <div class="form-group"><label>Nombre</label><input type="text" id="payName" placeholder="Ej: Arriendo"></div>
+    <div class="form-group"><label>Monto ($)</label><input type="number" id="payAmt" placeholder="0"></div>
+    <div class="form-group"><label>Fecha límite</label><input type="date" id="payDue"></div>
+    <div class="form-group"><label>Tipo</label>
+      <select id="payIcon"><option value="🏠">🏠 Arriendo</option><option value="💡">💡 Servicios</option><option value="📱">📱 Celular/Internet</option><option value="🚗">🚗 Transporte</option><option value="🏥">🏥 Salud</option><option value="🎓">🎓 Educación</option><option value="💳">💳 Tarjeta</option><option value="🛒">🛒 Mercado</option><option value="📦">📦 Otro</option></select>
+    </div>
+    <div class="modal-actions">
+      <button class="btn-cancel" onclick="closeM('payModal')">Cancelar</button>
+      <button class="btn-ok" onclick="savePay()">Agregar</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ── GEMINI KEY (integrada) ──
+const GEMINI_KEY = 'AIzaSyBRP9viojercgBDqREv8VpnnuG0F9_JTQE';
+
+const SYSTEM = `Eres Sagi, asistente personal de una Ingeniera de Sistemas colombiana que trabaja en el SENA y en Tránsito, y también es mamá. Eres experta en Excel, organización de agendas, redacción de correos profesionales, finanzas personales y apoyo con tareas escolares. Eres cálida, organizada y eficiente. Respondes en el mismo idioma en que te escriben. Cuando te pidan recordar algo, incluye al final: [RECORDATORIO|título|prioridad|categoría] donde prioridad=alta/media/baja y categoría=sena/transito/hijos/pagos/personal.`;
+
+let history = [];
+let reminders = JSON.parse(localStorage.getItem('sagi_rem') || '[]');
+let payments = JSON.parse(localStorage.getItem('sagi_pay') || '[]');
+
+// INIT
+window.onload = () => {
+  document.getElementById('dateLabel').textContent = new Date().toLocaleDateString('es-CO',{weekday:'short',day:'numeric',month:'short'});
+  if(payments.length===0){ payments=[
+    {id:1,name:'Arriendo',amount:800000,due:'2026-05-15',icon:'🏠',status:'pendiente'},
+    {id:2,name:'Servicios',amount:180000,due:'2026-05-20',icon:'💡',status:'pendiente'},
+    {id:3,name:'Internet+Celular',amount:95000,due:'2026-05-10',icon:'📱',status:'proximo'},
+    {id:4,name:'Tarjeta Crédito',amount:320000,due:'2026-05-25',icon:'💳',status:'pendiente'},
+    {id:5,name:'Seguro Médico',amount:75000,due:'2026-05-05',icon:'🏥',status:'pagado'}
+  ]; savePays(); }
+  renderRem(); renderPay(); updateBadges();
+  setTimeout(()=>addMsg('ai','👋 ¡Hola! Soy Sagi, tu asistente personal. Estoy lista para ayudarte con tu agenda del SENA y Tránsito, correos, Excel, tareas de tus hijos y mucho más. ¿En qué te ayudo hoy? 😊'), 500);
+};
+
+// TABS
+function switchTab(t, btn) {
+  document.querySelectorAll('.tab').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  document.querySelectorAll('.panel').forEach(p=>p.classList.remove('active'));
+  document.getElementById('panel-'+t).classList.add('active');
+}
+
+// CHAT
+async function sendMsg() {
+  const inp = document.getElementById('chatInput');
+  const txt = inp.value.trim();
+  if(!txt) return;
+  addMsg('user', txt);
+  inp.value=''; resize(inp);
+  document.querySelector('.btn-send').disabled=true;
+  const tid = addTyping();
+  history.push({role:'user', parts:[{text:txt}]});
+  const msgs = [
+    {role:'user', parts:[{text:SYSTEM+'\nResponde: Entendido.'}]},
+    {role:'model', parts:[{text:'Entendido.'}]},
+    ...history
+  ];
+  try {
+    const r = await fetch('https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key='+GEMINI_KEY,{
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({contents:msgs})
+    });
+    const d = await r.json();
+    removeTyping(tid);
+    if(d.error){ addMsg('ai','⚠️ Error: '+d.error.message); document.querySelector('.btn-send').disabled=false; return; }
+    const reply = d.candidates?.[0]?.content?.parts?.[0]?.text || 'Lo siento, intenta de nuevo.';
+    const rm = reply.match(/\[RECORDATORIO\|([^\|]+)\|([^\|]+)\|([^\]]+)\]/);
+    const clean = reply.replace(/\[RECORDATORIO\|[^\]]+\]/g,'').trim();
+    addMsg('ai', clean);
+    history.push({role:'model', parts:[{text:clean}]});
+    if(rm) addRemFromChat(rm[1].trim(), rm[2].trim(), rm[3].trim());
+  } catch(e) {
+    removeTyping(tid);
+    addMsg('ai','⚠️ No pude conectarme. Verifica tu internet.');
+  }
+  document.querySelector('.btn-send').disabled=false;
+}
+
+function send(txt){ document.getElementById('chatInput').value=txt; sendMsg(); }
+function goChat(txt){ switchTab('chat',document.querySelector('.tab')); send(txt); }
+
+function addMsg(role, text) {
+  const area = document.getElementById('chatArea');
+  const t = new Date().toLocaleTimeString('es-CO',{hour:'2-digit',minute:'2-digit'});
+  const d = document.createElement('div');
+  d.className='msg '+role;
+  d.innerHTML=`<div class="avatar">${role==='ai'?'🤖':'👩‍💻'}</div><div><div class="bubble">${fmt(text)}</div><div class="msg-time">${t}</div></div>`;
+  area.appendChild(d); area.scrollTop=area.scrollHeight;
+}
+
+function fmt(t){ return t.replace(/\*\*(.*?)\*\*/g,'<strong>$1</strong>').replace(/\*(.*?)\*/g,'<em>$1</em>').replace(/\n/g,'<br>'); }
+
+let tc=0;
+function addTyping(){
+  const area=document.getElementById('chatArea');
+  const id='ty-'+(++tc);
+  const d=document.createElement('div'); d.className='msg ai'; d.id=id;
+  d.innerHTML='<div class="avatar">🤖</div><div class="bubble"><div class="dots"><span></span><span></span><span></span></div></div>';
+  area.appendChild(d); area.scrollTop=area.scrollHeight; return id;
+}
+function removeTyping(id){ const e=document.getElementById(id); if(e)e.remove(); }
+
+function resetChat(){
+  history=[];
+  document.getElementById('chatArea').innerHTML=`<div class="welcome"><h2>¡Conversación nueva! 🔄</h2><p>¿En qué te ayudo ahora?</p><div class="chips"><div class="chip" onclick="send('Organiza mi semana en el SENA y Tránsito')">📅 Organizar semana</div><div class="chip" onclick="send('Ayúdame a redactar un correo formal')">✉️ Correo</div><div class="chip" onclick="send('Ayúdame con Excel')">📊 Excel</div></div></div>`;
+}
+
+function onKey(e){ if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();sendMsg();} }
+function resize(el){ el.style.height='auto'; el.style.height=Math.min(el.scrollHeight,120)+'px'; }
+
+// REMINDERS
+function addRemFromChat(title,pri,cat){
+  reminders.unshift({id:Date.now(),title,priority:pri,category:cat,datetime:null,done:false});
+  saveRems(); renderRem(); updateBadges();
+}
+function openRem(){
+  const n=new Date(); n.setMinutes(n.getMinutes()-n.getTimezoneOffset());
+  document.getElementById('remDt').value=n.toISOString().slice(0,16);
+  document.getElementById('remTitle').value='';
+  document.getElementById('remModal').classList.add('open');
+}
+function saveRem(){
+  const t=document.getElementById('remTitle').value.trim();
+  if(!t){alert('Escribe una descripción');return;}
+  reminders.unshift({id:Date.now(),title:t,priority:document.getElementById('remPri').value,category:document.getElementById('remCat').value,datetime:document.getElementById('remDt').value,done:false});
+  saveRems(); renderRem(); updateBadges(); closeM('remModal');
+}
+function renderRem(){
+  const list=document.getElementById('remList');
+  if(!reminders.length){list.innerHTML='<div class="empty"><div class="ei">📋</div><p>Sin recordatorios aún.<br>Dile a Sagi que recuerde algo.</p></div>';return;}
+  const cats={sena:'tag-sena',transito:'tag-transito',hijos:'tag-hijos',pagos:'tag-pagos',personal:'tag-personal'};
+  const catN={sena:'🎓 SENA',transito:'🚦 Tránsito',hijos:'👨‍👩‍👧 Hijos',pagos:'💳 Pagos',personal:'👤 Personal'};
+  list.innerHTML=reminders.map(r=>`
+    <div class="rem-card ${r.done?'done-card':''}">
+      <div class="dot ${r.priority}"></div>
+      <div style="flex:1">
+        <div class="rem-title">${r.title}</div>
+        <div class="rem-meta">
+          <span class="tag ${cats[r.category]||'tag-personal'}">${catN[r.category]||'👤 Personal'}</span>
+          ${r.datetime?`<span style="font-size:11px;color:#9CA3AF">⏰ ${new Date(r.datetime).toLocaleString('es-CO',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'})}</span>`:''}
+        </div>
+      </div>
+      <div class="rem-actions">
+        <button class="btn-sm" onclick="toggleRem(${r.id})">✓</button>
+        <button class="btn-sm" onclick="delRem(${r.id})">🗑</button>
+      </div>
+    </div>`).join('');
+}
+function toggleRem(id){const r=reminders.find(r=>r.id===id);if(r){r.done=!r.done;saveRems();renderRem();updateBadges();}}
+function delRem(id){reminders=reminders.filter(r=>r.id!==id);saveRems();renderRem();updateBadges();}
+function saveRems(){localStorage.setItem('sagi_rem',JSON.stringify(reminders));}
+
+// PAYMENTS
+function openPay(){
+  document.getElementById('payName').value=''; document.getElementById('payAmt').value='';
+  document.getElementById('payDue').value=new Date().toISOString().slice(0,10);
+  document.getElementById('payModal').classList.add('open');
+}
+function savePay(){
+  const n=document.getElementById('payName').value.trim();
+  const a=parseFloat(document.getElementById('payAmt').value);
+  if(!n||!a){alert('Completa todos los campos');return;}
+  payments.unshift({id:Date.now(),name:n,amount:a,due:document.getElementById('payDue').value,icon:document.getElementById('payIcon').value,status:'pendiente'});
+  savePays(); renderPay(); updateBadges(); closeM('payModal');
+}
+function renderPay(){
+  const fmt=n=>'$'+Math.round(n).toLocaleString('es-CO');
+  const total=payments.reduce((s,p)=>s+p.amount,0);
+  const paid=payments.filter(p=>p.status==='pagado').reduce((s,p)=>s+p.amount,0);
+  document.getElementById('sumTotal').textContent=fmt(total);
+  document.getElementById('sumPaid').textContent=fmt(paid);
+  document.getElementById('sumPend').textContent=fmt(total-paid);
+  const list=document.getElementById('payList');
+  if(!payments.length){list.innerHTML='<div class="empty"><div class="ei">💳</div><p>Sin cuentas aún.</p></div>';return;}
+  const lbl={pendiente:'Pendiente',pagado:'✓ Pagado',proximo:'⚠ Próximo'};
+  list.innerHTML=payments.map(p=>`
+    <div class="pay-item">
+      <div class="pay-icon">${p.icon}</div>
+      <div style="flex:1"><div class="pay-name">${p.name}</div><div class="pay-due">Vence: ${p.due?new Date(p.due+'T00:00:00').toLocaleDateString('es-CO',{day:'numeric',month:'long'}):''}</div></div>
+      <div style="text-align:right"><div class="pay-amount">${fmt(p.amount)}</div><span class="status s-${p.status}" onclick="cyclePay(${p.id})">${lbl[p.status]}</span></div>
+    </div>`).join('');
+}
+function cyclePay(id){const p=payments.find(p=>p.id===id);if(!p)return;const c={pendiente:'pagado',pagado:'proximo',proximo:'pendiente'};p.status=c[p.status];savePays();renderPay();updateBadges();}
+function savePays(){localStorage.setItem('sagi_pay',JSON.stringify(payments));}
+
+function updateBadges(){
+  const ra=reminders.filter(r=>!r.done).length;
+  const pp=payments.filter(p=>p.status!=='pagado').length;
+  document.getElementById('remBadge').textContent=ra||'';
+  document.getElementById('payBadge').textContent=pp||'';
+}
+
+// MODALS
+function closeM(id){document.getElementById(id).classList.remove('open');}
+document.querySelectorAll('.overlay').forEach(m=>m.addEventListener('click',e=>{if(e.target===m)m.classList.remove('open');}));
+</script>
+</body>
+</html>
